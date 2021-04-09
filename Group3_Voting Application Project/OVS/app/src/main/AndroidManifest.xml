@@ -2,7 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.ovs">
 
-    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.INTERNET" /> <!-- Step 1: Add the following permission to the app -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
 
     <application
         android:allowBackup="true"
@@ -11,8 +12,13 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.OVS">
-        <activity android:name=".CameraActivity"></activity>
-        <activity android:name=".LocationActivity" />
+        <activity android:name=".HistoryActivity"></activity>
+        <activity android:name=".UserActivity" />
+        <activity android:name=".Authenticate" />
+        <activity android:name=".VerifyActivity" />
+        <activity android:name=".UpdateActivity" />
+        <activity android:name=".HomeActivity" />
+        <activity android:name=".ForgetActivity" />
         <activity android:name=".RegisterActivity" />
         <activity android:name=".LoginActivity" />
         <activity android:name=".WelcomeActivity" />

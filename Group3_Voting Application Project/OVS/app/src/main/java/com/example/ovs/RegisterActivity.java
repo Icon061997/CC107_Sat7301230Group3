@@ -1,30 +1,34 @@
 package com.example.ovs;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-
-import android.app.ProgressDialog;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.TextView;
+import android.widget.ImageView;
 import android.widget.Toast;
 
-import java.util.HashMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
 
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
+import com.android.volley.AuthFailureError;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class RegisterActivity extends AppCompatActivity {
-
-    EditText inputName, inputPhone, inputPassword, inputRetype, inputemail, inputSection;
-    Button buttonNext, buttonBack;
-
+    private String URL = "https://cc107project.000webhostapp.com/OVS/registration.php";
+    private EditText inputName, inputPhone, inputPassword, inputRetype, inputemail, inputStatus, inputAddress, inputBarangay, inputCity, inputRegion, inputCode;
+    Button btnNextReg;
+    private String name, email, password, retype, phone, status, address, barangay, city, region, zipcode;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,88 +38,90 @@ public class RegisterActivity extends AppCompatActivity {
         inputName = findViewById(R.id.txtName);
         inputemail = findViewById(R.id.txtEmail);
         inputPassword = findViewById(R.id.txtPwd1);
-        inputRetype= findViewById(R.id.txtPwd2);
+        inputRetype = findViewById(R.id.txtPwd2);
         inputPhone = findViewById(R.id.txtPhone);
-        inputSection = findViewById(R.id.txtSection);
+        inputStatus = findViewById(R.id.txtStatus);
+        inputAddress = findViewById(R.id.txtAddressLoc);
+        inputBarangay = findViewById(R.id.txtBarangayLoc);
+        inputCity = findViewById(R.id.txtCityLoc);
+        inputRegion = findViewById(R.id.txtRegionLoc);
+        inputCode = findViewById(R.id.txtZipCode);
 
-        buttonBack = findViewById(R.id.btnBackReg);
-        buttonBack.setOnClickListener(new View.OnClickListener() {
+        btnNextReg = findViewById(R.id.btnNextReg);
+        btnNextReg.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(RegisterActivity.this, WelcomeActivity.class);
-                startActivity(intent);
-                finish();
+            public void onClick(View v) {
+                register();
             }
         });
-
-
-        buttonNext = findViewById(R.id.btnNextReg);
-        buttonNext.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View view) {
-
-                if (inputName.getText().toString().equals("")) {
-                    Toast.makeText(RegisterActivity.this, "Enter first name", Toast.LENGTH_SHORT).show();
-                } else if (inputemail.getText().toString().equals("")) {
-                    Toast.makeText(RegisterActivity.this, "Enter email", Toast.LENGTH_SHORT).show();
-                } else if (inputPassword.getText().toString().equals("")) {
-                    Toast.makeText(RegisterActivity.this, "Enter password", Toast.LENGTH_SHORT).show();
-                } else if (inputRetype.getText().toString().equals("")) {
-                    Toast.makeText(RegisterActivity.this, "Re-type password", Toast.LENGTH_SHORT).show();
-                } else if (inputPhone.getText().toString().equals("")) {
-                    Toast.makeText(RegisterActivity.this, "Enter phone", Toast.LENGTH_SHORT).show();
-                } else if (inputSection.getText().toString().equals("")) {
-                    Toast.makeText(RegisterActivity.this, "Enter section", Toast.LENGTH_SHORT).show();
-                } else {
-
-                    HashMap<String, String> params = new HashMap<>();
-                    params.put("name", inputName.getText().toString());
-                    params.put("email", inputemail.getText().toString());
-                    params.put("password", inputPassword.getText().toString());
-                    params.put("retype", inputRetype.getText().toString());
-                    params.put("phone", inputPhone.toString());
-                    params.put("section", inputSection.getText().toString());
-                    register(params);
-                }
-
-            }
-
-        });
-
     }
 
-    private void register(HashMap<String, String> params) {
 
-        final ProgressDialog progressDialog = new ProgressDialog(RegisterActivity.this);
-        progressDialog.setTitle("Please wait");
-        progressDialog.setMessage("Registering...");
-        progressDialog.setCancelable(false);
-        progressDialog.show();
+    public void register() {
+        name = inputName.getText().toString().trim();
+        password = inputPassword.getText().toString().trim();
+        email = inputemail.getText().toString().trim();
+        retype = inputRetype.getText().toString().trim();
+        phone = inputPhone.getText().toString().trim();
+        status = inputStatus.getText().toString().trim();
+        address = inputAddress.getText().toString().trim();
+        barangay = inputBarangay.getText().toString().trim();
+        city = inputCity.getText().toString().trim();
+        region = inputRegion.getText().toString().trim();
+        zipcode = inputCode.getText().toString().trim();
 
-        NetworkService networkService = NetworkClient.getClient().create(NetworkService.class);
-        Call<RegistrationResponseModel> registerCall = networkService.register(params);
-        registerCall.enqueue(new Callback<RegistrationResponseModel>() {
-            @Override
-            public void onResponse(@NonNull Call<RegistrationResponseModel> call, @NonNull Response<RegistrationResponseModel> response) {
-                RegistrationResponseModel responseBody = response.body();
-                if (responseBody != null) {
-                    if (responseBody.getSuccess().equals("1")) {
-                        Toast.makeText(RegisterActivity.this, responseBody.getMessage(), Toast.LENGTH_SHORT).show();
+        if (!password.equals(retype)) {
+            Toast.makeText(this, "Password Mismatch Make Sure You Enter Correct Password", Toast.LENGTH_SHORT).show();
+        } else if (!name.equals("") && !email.equals("") && !password.equals("")) {
+            StringRequest stringRequest = new StringRequest(Request.Method.POST, URL, new Response.Listener<String>() {
+                @Override
+                public void onResponse(String response) {
+                    if (response.equals("success")) {
                         Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
                         startActivity(intent);
                         finish();
-                    } else {
-                        Toast.makeText(RegisterActivity.this, responseBody.getMessage(), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(RegisterActivity.this, "Successfully Registered", Toast.LENGTH_SHORT).show();
+                       /* inputName.setText("");
+                        inputPassword.setText("");
+                        inputemail.setText("");
+                        inputRetype.setText("");
+                        inputPhone.setText("");
+                        inputSection.setText(""); */
+
+
+                    } else if (response.equals("failure")) {
+                        Toast.makeText(RegisterActivity.this, "Something Went Wrong!", Toast.LENGTH_SHORT).show();
+
                     }
                 }
-                progressDialog.dismiss();
-            }
+            }, new Response.ErrorListener() {
+                @Override
+                public void onErrorResponse(VolleyError error) {
+                    Toast.makeText(getApplicationContext(), error.toString().trim(), Toast.LENGTH_SHORT).show();
+                }
+            }) {
+                @Override
+                protected Map<String, String> getParams() throws AuthFailureError {
+                    Map<String, String> data = new HashMap<>();
+                    data.put("name", name);
+                    data.put("email", email);
+                    data.put("password", password);
+                    data.put("retype", retype);
+                    data.put("phone", phone);
+                    data.put("status", status);
+                    data.put("address", address);
+                    data.put("barangay", barangay);
+                    data.put("city", city);
+                    data.put("region", region);
+                    data.put("zipcode", zipcode);
+                    return data;
+                }
+            };
+            RequestQueue requestQueue = Volley.newRequestQueue(getApplicationContext());
+            requestQueue.add(stringRequest);
+        } else {
+            Toast.makeText(RegisterActivity.this, "Fields Should not be empty", Toast.LENGTH_SHORT).show();
+        }
 
-            @Override
-            public void onFailure(@NonNull Call<RegistrationResponseModel> call, @NonNull Throwable t) {
-                progressDialog.dismiss();
-            }
-        });
     }
 }

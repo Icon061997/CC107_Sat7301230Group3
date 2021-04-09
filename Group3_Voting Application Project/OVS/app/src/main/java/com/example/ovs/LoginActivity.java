@@ -1,36 +1,42 @@
 package com.example.ovs;
 
-import android.app.Activity;
-import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.text.method.PasswordTransformationMethod;
 import android.view.View;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import com.android.volley.AuthFailureError;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
+import java.util.HashMap;
+import java.util.Map;
 
 public class LoginActivity extends AppCompatActivity {
-
-    EditText inputEmail, inputPassword;
+    private String URL = "https://cc107project.000webhostapp.com/OVS/login.php";
+    private EditText inputPhoneLog, inputPasswordLog;
     Button buttonLogin;
-    TextView textCreateAccount;
+    CheckBox showpass, rmbrme;
+    private String phone, password;
+    TextView textCreateAccount, forget;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        textCreateAccount = findViewById(R.id.lnkRegister);
+        textCreateAccount = findViewById(R.id.create);
         textCreateAccount.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -39,72 +45,107 @@ public class LoginActivity extends AppCompatActivity {
             }
         });
 
-        inputEmail = findViewById(R.id.txtLoginEmail);
-        inputPassword = findViewById(R.id.txtLoginPwd);
+        inputPhoneLog = findViewById(R.id.txtLoginPhone);
+        inputPasswordLog = findViewById(R.id.txtLoginPwd);
+        forget = findViewById(R.id.forget);
+        rmbrme = findViewById(R.id.rmberme);
+        showpass = findViewById(R.id.showpass);
 
-        buttonLogin = findViewById(R.id.btnLoginLog);
-        buttonLogin.setOnClickListener(new View.OnClickListener() {
+        SharedPreferences preferences = getSharedPreferences("Checked", MODE_PRIVATE);
+        String checkbox = preferences.getString("Remember", "");
+        if (checkbox.equals("true")) {
+            Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
+            startActivity(intent);
+        } else if (checkbox.equals("false")) {
+            Toast.makeText(this, "Please Sign in", Toast.LENGTH_SHORT).show();
+        }
+
+        forget.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (inputEmail.getText().toString().equals("")) {
-                    Toast.makeText(LoginActivity.this, "Please Enter Email", Toast.LENGTH_SHORT).show();
-                } else if (inputPassword.getText().toString().equals("")) {
-                    Toast.makeText(LoginActivity.this, "Please Enter Password", Toast.LENGTH_SHORT).show();
+                startActivity(new Intent(LoginActivity.this, ForgetActivity.class));
+
+            }
+        });
+
+        buttonLogin = findViewById(R.id.btnLoginLogin);
+        buttonLogin.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                login();
+            }
+        });
+        showpass.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked) {
+                    inputPasswordLog.setTransformationMethod(null);
+                    Toast.makeText(LoginActivity.this, "Checked", Toast.LENGTH_SHORT).show();
+
                 } else {
-                    login();
+                    inputPasswordLog.setTransformationMethod(new PasswordTransformationMethod());
+                    Toast.makeText(LoginActivity.this, "Unchecked", Toast.LENGTH_SHORT).show();
+
                 }
             }
         });
 
-
-    }
-
-    public static void hideSoftKeyboard(Activity activity) {
-        InputMethodManager inputMethodManager =
-                (InputMethodManager) activity.getSystemService(
-                        Activity.INPUT_METHOD_SERVICE);
-        inputMethodManager.hideSoftInputFromWindow(
-                activity.getCurrentFocus().getWindowToken(), 0);
-    }
-
-
-    private void login() {
-
-        final ProgressDialog progressDialog = new ProgressDialog(LoginActivity.this);
-        progressDialog.setTitle("Please wait");
-        progressDialog.setMessage("Logging in...");
-        progressDialog.setCancelable(false);
-        progressDialog.show();
-        NetworkService networkService = NetworkClient.getClient().create(NetworkService.class);
-        Call<LoginResponseModel> login = networkService.login(inputEmail.getText().toString(), inputPassword.getText().toString());
-        login.enqueue(new Callback<LoginResponseModel>() {
+        rmbrme.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
-            public void onResponse(@NonNull Call<LoginResponseModel> call, @NonNull Response<LoginResponseModel> response) {
-                LoginResponseModel responseBody = response.body();
-                if (responseBody != null) {
-                    if (responseBody.getSuccess().equals("1")) {
-                        SharedPreferences preferences = getSharedPreferences(Constants.PREFERENCE_NAME, MODE_PRIVATE);
-                        SharedPreferences.Editor editor = preferences.edit();
-                        editor.putBoolean(Constants.KEY_ISE_LOGGED_IN, true);
-                        editor.putString(Constants.KEY_USERNAME, responseBody.getUserDetailObject().getUserDetails().get(0).getFirstName() + " " + responseBody.getUserDetailObject().getUserDetails().get(0).getLastName());
-                        editor.putString(Constants.KEY_EMAIL, responseBody.getUserDetailObject().getUserDetails().get(0).getEmail());
-                        editor.apply();
-                        Toast.makeText(LoginActivity.this, responseBody.getMessage(), Toast.LENGTH_SHORT).show();
-                        startActivity(new Intent(getApplicationContext(), CameraActivity.class));
-                        finish();
+            public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
+                if (compoundButton.isChecked()) {
+                    SharedPreferences preferences = getSharedPreferences("checkbox", MODE_PRIVATE);
+                    SharedPreferences.Editor editor = preferences.edit();
+                    editor.putString("remember", "true");
+                    editor.apply();
+                    Toast.makeText(LoginActivity.this, "Checked", Toast.LENGTH_SHORT).show();
+                } else if (!compoundButton.isChecked()) {
+                    SharedPreferences preferences = getSharedPreferences("checkbox", MODE_PRIVATE);
+                    SharedPreferences.Editor editor = preferences.edit();
+                    editor.putString("remember", "false");
+                    editor.apply();
+                    Toast.makeText(LoginActivity.this, "Unchecked", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+
+    }
+
+
+    public void login() {
+        phone = inputPhoneLog.getText().toString().trim();
+        password = inputPasswordLog.getText().toString().trim();
+        if (!phone.equals("") && !password.equals("")) {
+            StringRequest stringRequest = new StringRequest(Request.Method.POST, URL, new Response.Listener<String>() {
+                @Override
+                public void onResponse(String response) {
+                    if (response.equals("success")) {
+                        Intent intent = new Intent(LoginActivity.this, Authenticate.class);
+                        startActivity(intent);
+
                     } else {
-                        Toast.makeText(LoginActivity.this, responseBody.getMessage(), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(LoginActivity.this, "Invalid Email and Password", Toast.LENGTH_SHORT).show();
                     }
+
                 }
-                progressDialog.dismiss();
-            }
-
-            @Override
-            public void onFailure(@NonNull Call<LoginResponseModel> call, @NonNull Throwable t) {
-                progressDialog.dismiss();
-            }
-        });
+            }, new Response.ErrorListener() {
+                @Override
+                public void onErrorResponse(VolleyError error) {
+                    Toast.makeText(LoginActivity.this, error.toString().trim(), Toast.LENGTH_SHORT).show();
+                }
+            }) {
+                @Override
+                protected Map<String, String> getParams() throws AuthFailureError {
+                    Map<String, String> data = new HashMap<>();
+                    data.put("phone", phone);
+                    data.put("password", password);
+                    return data;
+                }
+            };
+            RequestQueue requestQueue = Volley.newRequestQueue(getApplicationContext());
+            requestQueue.add(stringRequest);
+        } else {
+            Toast.makeText(LoginActivity.this, "Fields can not be empty!", Toast.LENGTH_SHORT).show();
+        }
     }
-
-
 }
