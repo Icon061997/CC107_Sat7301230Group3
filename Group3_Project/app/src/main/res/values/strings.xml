@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">OVS</string>
+    <string name="instructions">
+Place your fingertip on the Home button to verify your identity
+</string>
+    <string name="open">Open</string>
+    <string name="close">Close</string>
+</resources>
